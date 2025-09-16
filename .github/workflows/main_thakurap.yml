@@ -1,35 +1,43 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: CI/CD Pipeline
+name: Build and Deploy to Azure
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18.x
+      # Install and build frontend
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          cd ..
+          # Copy React build into backend
+          rm -rf backend/frontend/dist
+          mkdir -p backend/frontend
+          cp -r frontend/dist backend/frontend/
 
-    # Install backend
-    - name: Install Backend
-      run: |
-        cd backend
-        npm install
+      # Install backend dependencies
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
 
-    # Deploy backend to Azure App Service
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: thakurap
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ./backend
+      # Deploy to Azure App Service
+      - name: Deploy to Azure WebApp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: thakurap-f3fvama2hhf8thvhy
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: ./backend
