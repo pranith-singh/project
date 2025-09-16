@@ -1,53 +1,70 @@
-import { useEffect, useState } from 'react';
-import { getTodos, createTodo, updateTodo, deleteTodo } from './api/todoApi';
-import TodoItem from './components/TodoItem';
-import './index.css';
+import { useState, useEffect } from "react";
+import { getTodos, addTodo, updateTodo, deleteTodo } from "./api/todoApi";
+import TodoItem from "./components/TodoItem";
 
-export default function App() {
+function App() {
   const [todos, setTodos] = useState([]);
-  const [text, setText] = useState('');
+  const [newTodo, setNewTodo] = useState("");
 
-  useEffect(() => { fetchTodos(); }, []);
+  // Load todos when app starts
+  useEffect(() => {
+    loadTodos();
+  }, []);
 
-  const fetchTodos = async () => {
-    const res = await getTodos();
-    setTodos(res.data);
+  const loadTodos = async () => {
+    const data = await getTodos();
+    setTodos(data);
   };
 
-  const addTodo = async () => {
-    if (!text) return;
-    const res = await createTodo({ text });
-    setTodos([...todos, res.data]);
-    setText('');
+  const handleAdd = async () => {
+    if (!newTodo.trim()) return;
+    const todo = await addTodo({ title: newTodo, completed: false });
+    setTodos([...todos, todo]);
+    setNewTodo("");
   };
 
-  const toggleTodo = async (todo) => {
-    const res = await updateTodo(todo._id, { completed: !todo.completed });
-    setTodos(todos.map(t => t._id === todo._id ? res.data : t));
+  const handleToggle = async (id, completed) => {
+    const updated = await updateTodo(id, { completed: !completed });
+    setTodos(todos.map((t) => (t._id === id ? updated : t)));
   };
 
-  const removeTodo = async (todo) => {
-    await deleteTodo(todo._id);
-    setTodos(todos.filter(t => t._id !== todo._id));
+  const handleDelete = async (id) => {
+    await deleteTodo(id);
+    setTodos(todos.filter((t) => t._id !== id));
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-5 border rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">To-Do List</h1>
-      <div className="flex mb-4">
+    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-6">
+      <h1 className="text-3xl font-bold mb-6">✅ My Todo App</h1>
+      
+      <div className="flex gap-2 mb-6">
         <input
           type="text"
-          className="border p-2 flex-1 mr-2 rounded"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          className="border p-2 rounded"
+          value={newTodo}
+          onChange={(e) => setNewTodo(e.target.value)}
+          placeholder="Enter new todo"
         />
-        <button className="bg-blue-500 text-white px-4 rounded" onClick={addTodo}>Add</button>
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={handleAdd}
+        >
+          Add
+        </button>
       </div>
-      <div>
-        {todos.map(todo => (
-          <TodoItem key={todo._id} todo={todo} onToggle={toggleTodo} onDelete={removeTodo}/>
+
+      <ul className="w-full max-w-md">
+        {todos.map((todo) => (
+          <TodoItem
+            key={todo._id}
+            todo={todo}
+            onToggle={() => handleToggle(todo._id, todo.completed)}
+            onDelete={() => handleDelete(todo._id)}
+          />
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
+
+export default App;
